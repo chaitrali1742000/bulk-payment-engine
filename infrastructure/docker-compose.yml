@@ -1,0 +1,102 @@
+#The "Why": The Problem Docker Solves
+#Imagine you wanted to run this infrastructure directly on your Mac without Docker. You would have to:
+#
+#  Download the Apache Kafka binaries.
+#  Configure Kafka's messy property files.
+#  Download the Confluent Schema Registry.
+#  Open three different terminal windows just to start them all up in the correct order.
+#  Pray that a future Mac update doesn't break your Java environment variables.
+#  Docker solves this by putting each piece of software into its own isolated, pre-configured box called a container.
+#
+#Docker Compose is simply the "recipe" or the "conductor." Instead of starting each container manually one by one, the docker-compose.yml file tells Docker: "Here are all the boxes I need, here is how they should be configured, and here is how they should talk to each other. Turn them all on at once."
+#
+#The "What": Breaking Down Our File
+#  If you look at the docker-compose.yml we created, it is divided into services.
+#  Each service is one container (one isolated box).
+#
+#Service 1: broker (Apache Kafka)
+#
+#What it is: The actual messaging engine where your bulk payments will be stored.
+#
+#Why the long environment variables?: We configured it to run in "KRaft mode." Historically, Kafka required a completely separate server called Zookeeper just to function.
+#  KRaft removes that need, making your setup lighter and faster.
+#  We also configured it for "Exactly-Once Semantics" (EOS) so your local environment mimics a real bank.
+#
+#Service 2: schema-registry
+#
+#What it is: The strict "rulebook" for your data.
+#
+#How Compose helps: Notice the line depends_on: - broker. Docker Compose is smart.
+#  It knows the registry will crash if Kafka isn't running yet,
+#  so it automatically waits for Kafka to boot up before starting the registry.
+#
+#Service 3: kafka-ui
+#
+#What it is: A beautiful web dashboard.
+#  Kafka is entirely command-line based by default, which makes debugging hard.
+#
+#The Compose Magic: Docker Compose automatically creates a private, invisible network for these three containers.
+#  This allows kafka-ui to connect to Kafka simply by calling the name broker,
+#  rather than needing a complex IP address.
+#
+#The ultimate benefit: When you are done coding for the day, you just type docker-compose down.
+#  It gracefully packs all those servers away, freeing up your computer's memory, leaving zero mess behind.
+
+---
+version: '3.8'
+
+services:
+  broker:
+    image: confluentinc/cp-kafka:7.5.1
+    hostname: broker
+    container_name: broker
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      # Required for Exactly-Once Semantics (EOS) on a single local node
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.1
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  # A lightweight Web UI to inspect your topics, messages, and schemas visually
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - broker
+      - schema-registry
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      DYNAMIC_CONFIG_ENABLED: 'true'
+
