@@ -1,0 +1,45 @@
+{
+  "namespace": "com.bank.schema",
+  "type": "record",
+  "name": "PaymentEvent",
+  "fields": [
+    {
+      "name": "transactionId",
+      "type": "string",
+      "doc": "Unique identifier for this specific transaction"
+    },
+    {
+      "name": "bulkFileId",
+      "type": "string",
+      "doc": "The ID of the parent bulk file this transaction came from"
+    },
+    {
+      "name": "sourceAccountId",
+      "type": "string"
+    },
+    {
+      "name": "destinationAccountId",
+      "type": "string"
+    },
+    {
+      "name": "amount",
+      "type": "double"
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "doc": "3-letter currency code, e.g., USD, EUR, INR"
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "default": "PENDING",
+      "doc": "PENDING, VALIDATED, CLEARED, FAILED"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis"
+    }
+  ]
+}
