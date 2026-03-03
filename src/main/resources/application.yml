@@ -1,0 +1,25 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: payment-ingestion
+
+  # JAVA 21 MAGIC: Turn on Virtual Threads for all web requests and Kafka producers!
+  threads:
+    virtual:
+      enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      # We publish to the 'payments-raw' topic
+      client-id: ingestion-producer-1
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        # Point to our local docker-compose Schema Registry
+        schema.registry.url: http://localhost:8081
+        # Required for Exactly-Once Semantics (EOS)
+        enable.idempotence: true
+        acks: all

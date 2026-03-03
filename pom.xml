@@ -19,9 +19,7 @@
 
     <modules>
         <module>common-schemas</module>
-        <module>reference-data-service</module>
         <module>payment-ingestion</module>
-        <module>clearing-settlement-engine</module>
     </modules>
 
     <properties>
