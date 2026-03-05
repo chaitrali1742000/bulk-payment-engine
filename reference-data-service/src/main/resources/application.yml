@@ -1,0 +1,21 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: reference-data-service
+
+  threads:
+    virtual:
+      enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      client-id: ref-data-producer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        schema.registry.url: http://localhost:8081
+        enable.idempotence: true
+        acks: all

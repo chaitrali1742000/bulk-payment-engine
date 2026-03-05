@@ -1,0 +1,21 @@
+{
+  "namespace": "com.bank.schema",
+  "type": "record",
+  "name": "ExchangeRate",
+  "fields": [
+    {
+      "name": "currencyPair",
+      "type": "string",
+      "doc": "The key for the rate, e.g., USD_EUR"
+    },
+    {
+      "name": "rate",
+      "type": "double"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis"
+    }
+  ]
+}

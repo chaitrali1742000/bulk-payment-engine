@@ -45,12 +45,37 @@ You successfully built the "front door" of your banking engine. Here is a breakd
 2. The Kafka Producer (payment-ingestion)
    You built a highly optimized Spring Boot application using Java 21 Virtual Threads.
 
-The Controller: You created a REST API (POST /api/v1/payments) that listens for incoming payment requests from external clients (like your Talend API Tester).
+The Controller: You created a REST API (POST /api/v1/payments) that listens 
+for incoming payment requests from external clients (like your Talend API Tester).
 
-The Producer: You wrote the PaymentProducer class. Its job is to take that incoming JSON, wrap it safely into our strict Avro format, and fire it off to the Kafka server.
+The Producer: You wrote the PaymentProducer class. 
+Its job is to take that incoming JSON, wrap it safely into our strict Avro format, 
+and fire it off to the Kafka server.
 
 3. The Topic and The Message
 
-Did we create a topic? Yes! In Kafka, if a producer tries to send a message to a topic that doesn't exist, Kafka will automatically create it. When you fired that first successful request from Talend, Kafka saw the destination was payments-raw, auto-created the topic, and set up the partitions.
+Did we create a topic? Yes! In Kafka, if a producer tries to send a message to a topic that doesn't exist, 
+Kafka will automatically create it. When you fired that first successful request from Talend, 
+Kafka saw the destination was payments-raw, auto-created the topic, and set up the partitions.
 
-Is the message ready to be consumed? Yes! Your TXN-9999 payment was compressed into a tiny 143-byte binary file and written to the broker's disk. It is currently sitting inside Partition 0 of the payments-raw topic, perfectly safe, just waiting for the next part of our system (the Clearing Engine) to pick it up and process it.
+Is the message ready to be consumed? Yes! 
+Your TXN-9999 payment was compressed into a tiny 143-byte binary file and written to the broker's disk. 
+It is currently sitting inside Partition 0 of the payments-raw topic, perfectly safe, 
+just waiting for the next part of our system (the Clearing Engine) to pick it up and process it.
+
+Phase 2 Summary:  
+
+In a payment engine, you can't just pass a transaction from Point A to Point B. 
+If a client sends USD but the destination account is in EUR, 
+you need to apply an exchange rate. Instead of making a slow database call for every single transaction,
+we are going to stream live exchange rates directly into Kafka.
+
+We will use a Kafka feature called Log Compaction for this. 
+Instead of keeping a massive history of every exchange rate ever published, 
+Kafka will continually delete old rates and only keep the absolute latest value for each currency pair.
+
+Reference Data Service:
+This module is going to be a background worker. 
+It doesn't need a REST controller because no one is sending it HTTP requests. 
+Instead, it will use a standard Spring Boot timer to wake up every 5 seconds, 
+generate a new exchange rate, and push it to Kafka.
