@@ -1,0 +1,44 @@
+{
+  "namespace": "com.bank.schema",
+  "type": "record",
+  "name": "ClearedPayment",
+  "fields": [
+    {
+      "name": "transactionId",
+      "type": "string"
+    },
+    {
+      "name": "sourceAccountId",
+      "type": "string"
+    },
+    {
+      "name": "destinationAccountId",
+      "type": "string"
+    },
+    {
+      "name": "originalAmount",
+      "type": "double"
+    },
+    {
+      "name": "originalCurrency",
+      "type": "string"
+    },
+    {
+      "name": "appliedExchangeRate",
+      "type": "double"
+    },
+    {
+      "name": "settledAmount",
+      "type": "double"
+    },
+    {
+      "name": "status",
+      "type": "string"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis"
+    }
+  ]
+}
